@@ -7,11 +7,8 @@ import { Plus } from "lucide-react"
 import ServiceForm from "@/components/admin/ServiceForm"
 import IncidentForm from "@/components/admin/IncidentForm"
 import { Service, Incident } from "@/types"
-import { useUser } from '@auth0/nextjs-auth0/client'
-import Link from 'next/link'
 
 export default function AdminDashboard() {
-  const { user, isLoading } = useUser()
   const [services, setServices] = useState<Service[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false)
@@ -77,8 +74,6 @@ export default function AdminDashboard() {
     setIsIncidentFormOpen(false)
     setEditingIncident(null)
   }
-
-  if (isLoading) return <div>Loading...</div>
 
   return (
     <div className="space-y-6">
