@@ -18,9 +18,9 @@ interface ServiceFormData {
 
 export default function ServicesManagement() {
   const [services, setServices] = useState<Service[]>([
-    { id: 1, name: "API", status: "operational" },
-    { id: 2, name: "Website", status: "degraded" },
-    { id: 3, name: "Database", status: "operational" },
+    { id: "1", name: "API", status: "operational" },
+    { id: "2", name: "Website", status: "degraded" },
+    { id: "3", name: "Database", status: "operational" },
   ])
 
   const [newService, setNewService] = useState<ServiceFormData>({
@@ -31,18 +31,18 @@ export default function ServicesManagement() {
   const addService = () => {
     setServices([
       ...services,
-      { id: services.length + 1, ...newService }
+      { id: Date.now().toString(), ...newService }
     ])
     setNewService({ name: "", status: "operational" })
   }
 
-  const updateService = (id: number, updatedService: Partial<Service>) => {
+  const updateService = (id: string, updatedService: Partial<Service>) => {
     setServices(services.map((service: Service) => 
       service.id === id ? { ...service, ...updatedService } : service
     ))
   }
 
-  const deleteService = (id: number) => {
+  const deleteService = (id: string) => {
     setServices(services.filter((service: Service) => service.id !== id))
   }
 

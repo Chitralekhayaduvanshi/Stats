@@ -28,7 +28,7 @@ export async function getServices() {
     return services.map(({ _id, ...service }) => ({
       ...service,
       id: _id.toString()
-    })) as Service[]
+    }))
   } catch (error) {
     console.error('Error in getServices:', error)
     throw error
@@ -41,7 +41,7 @@ export async function createService(service: Omit<Service, 'id'>) {
   return {
     ...service,
     id: result.insertedId.toString()
-  } as Service
+  }
 }
 
 export async function updateService(id: string, service: Partial<Service>) {
@@ -65,7 +65,7 @@ export async function getIncidents() {
     ...incident,
     id: _id.toString(),
     createdAt: new Date(incident.createdAt)
-  })) as Incident[]
+  }))
 }
 
 export async function createIncident(incident: Omit<Incident, 'id'>) {
@@ -77,7 +77,7 @@ export async function createIncident(incident: Omit<Incident, 'id'>) {
   return {
     ...incident,
     id: result.insertedId.toString()
-  } as Incident
+  }
 }
 
 export async function updateIncident(id: string, incident: Partial<Incident>) {
