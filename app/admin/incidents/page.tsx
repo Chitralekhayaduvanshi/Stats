@@ -1,89 +1,124 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { IncidentForm } from "@/components/admin/IncidentForm"
+import { Incident } from "@/types"
+import { format } from "date-fns"
+import { toast } from "sonner"
 
-interface Incident {
-  id: number
-  title: string
-  description: string
-  status: "investigating" | "identified" | "monitoring" | "resolved"
-  createdAt: Date
-}
+export default function IncidentsManagement() {
+  const [incidents, setIncidents] = useState<Incident[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
 
-export default function IncidentManagement() {
-  const [incidents, setIncidents] = useState<Incident[]>([
-    {
-      id: 1,
-      title: "API Slowdown",
-      description: "We're experiencing slowdowns in our API",
-      status: "investigating",
-      createdAt: new Date(),
-    },
-  ])
-  const [newIncident, setNewIncident] = useState({ title: "", description: "", status: "investigating" as const })
+  useEffect(() => {
+    fetchIncidents()
+  }, [])
 
-  const addIncident = () => {
-    setIncidents([...incidents, { id: incidents.length + 1, ...newIncident, createdAt: new Date() }])
-    setNewIncident({ title: "", description: "", status: "investigating" })
+  const fetchIncidents = async () => {
+    try {
+      const response = await fetch('/api/incidents')
+      if (!response.ok) throw new Error('Failed to fetch incidents')
+      const data = await response.json()
+      setIncidents(data)
+    } catch (error) {
+      console.error('Error fetching incidents:', error)
+      toast.error("Failed to load incidents")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const updateIncidentStatus = (id: number, status: Incident["status"]) => {
-    setIncidents(incidents.map((incident) => (incident.id === id ? { ...incident, status } : incident)))
+  const handleCreateIncident = async (incidentData: Partial<Incident>) => {
+    try {
+      const response = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(incidentData),
+      })
+      
+      if (!response.ok) throw new Error('Failed to create incident')
+      
+      await fetchIncidents()
+      setShowForm(false)
+    } catch (error) {
+      console.error('Error creating incident:', error)
+      throw error // Let the form handle the error
+    }
   }
 
-  const deleteIncident = (id: number) => {
-    setIncidents(incidents.filter((incident) => incident.id !== id))
+  const handleUpdateIncident = async (incidentData: Partial<Incident>) => {
+    try {
+      const response = await fetch('/api/incidents', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...incidentData, id: selectedIncident?.id }),
+      })
+      
+      if (!response.ok) throw new Error('Failed to update incident')
+      
+      await fetchIncidents()
+      setSelectedIncident(null)
+    } catch (error) {
+      console.error('Error updating incident:', error)
+      throw error
+    }
+  }
+
+  const handleDeleteIncident = async (id: string) => {
+    try {
+      const response = await fetch('/api/incidents', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+      
+      if (!response.ok) throw new Error('Failed to delete incident')
+      
+      await fetchIncidents()
+      toast.success("Incident deleted")
+    } catch (error) {
+      console.error('Error deleting incident:', error)
+      toast.error("Failed to delete incident")
+    }
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>
   }
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Incident Management</h1>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="mb-4">Create New Incident</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New Incident</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="title"
-                value={newIncident.title}
-                onChange={(e) => setNewIncident({ ...newIncident, title: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea
-                id="description"
-                value={newIncident.description}
-                onChange={(e) => setNewIncident({ ...newIncident, description: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <Button onClick={addIncident}>Create Incident</Button>
-        </DialogContent>
-      </Dialog>
+      <h1 className="text-3xl font-bold mb-6">Incidents Management</h1>
+      
+      <Button onClick={() => setShowForm(true)} className="mb-4">
+        Add New Incident
+      </Button>
+
+      {(showForm || selectedIncident) && (
+        <IncidentForm
+          incident={selectedIncident}
+          onClose={() => {
+            setShowForm(false)
+            setSelectedIncident(null)
+          }}
+          onSubmit={selectedIncident ? handleUpdateIncident : handleCreateIncident}
+        />
+      )}
+
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Title</TableHead>
-            <TableHead>Description</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead>Actions</TableHead>
@@ -93,39 +128,20 @@ export default function IncidentManagement() {
           {incidents.map((incident) => (
             <TableRow key={incident.id}>
               <TableCell>{incident.title}</TableCell>
-              <TableCell>{incident.description}</TableCell>
               <TableCell>{incident.status}</TableCell>
-              <TableCell>{incident.createdAt.toLocaleString()}</TableCell>
+              <TableCell>{format(new Date(incident.createdAt), 'PPp')}</TableCell>
               <TableCell>
                 <Button
                   variant="outline"
                   className="mr-2"
-                  onClick={() => updateIncidentStatus(incident.id, "investigating")}
+                  onClick={() => setSelectedIncident(incident)}
                 >
-                  Investigating
+                  Edit
                 </Button>
                 <Button
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => updateIncidentStatus(incident.id, "identified")}
+                  variant="destructive"
+                  onClick={() => handleDeleteIncident(incident.id)}
                 >
-                  Identified
-                </Button>
-                <Button
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => updateIncidentStatus(incident.id, "monitoring")}
-                >
-                  Monitoring
-                </Button>
-                <Button
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => updateIncidentStatus(incident.id, "resolved")}
-                >
-                  Resolved
-                </Button>
-                <Button variant="destructive" onClick={() => deleteIncident(incident.id)}>
                   Delete
                 </Button>
               </TableCell>

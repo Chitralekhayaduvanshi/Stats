@@ -1,102 +1,118 @@
 "use client"
 
-import { useState, ChangeEvent } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { Service } from '@/types'
-
-type ServiceStatus = "operational" | "degraded" | "outage"
-
-interface ServiceFormData {
-  name: string
-  status: ServiceStatus
-}
+import { ServiceForm } from "@/components/admin/ServiceForm"
+import { Service } from "@/types"
+import { toast } from "sonner"
 
 export default function ServicesManagement() {
-  const [services, setServices] = useState<Service[]>([
-    { id: "1", name: "API", status: "operational" },
-    { id: "2", name: "Website", status: "degraded" },
-    { id: "3", name: "Database", status: "operational" },
-  ])
+  const [services, setServices] = useState<Service[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [selectedService, setSelectedService] = useState<Service | null>(null)
 
-  const [newService, setNewService] = useState<ServiceFormData>({
-    name: "",
-    status: "operational"
-  })
+  useEffect(() => {
+    fetchServices()
+  }, [])
 
-  const addService = () => {
-    setServices([
-      ...services,
-      { id: Date.now().toString(), ...newService }
-    ])
-    setNewService({ name: "", status: "operational" })
+  const fetchServices = async () => {
+    try {
+      const response = await fetch('/api/services')
+      if (!response.ok) throw new Error('Failed to fetch services')
+      const data = await response.json()
+      setServices(data)
+    } catch (error) {
+      console.error('Error fetching services:', error)
+      toast.error("Failed to load services")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const updateService = (id: string, updatedService: Partial<Service>) => {
-    setServices(services.map((service: Service) => 
-      service.id === id ? { ...service, ...updatedService } : service
-    ))
+  const handleCreateService = async (serviceData: Partial<Service>) => {
+    try {
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(serviceData),
+      })
+      
+      if (!response.ok) throw new Error('Failed to create service')
+      
+      await fetchServices()
+      setShowForm(false)
+    } catch (error) {
+      console.error('Error creating service:', error)
+      throw error
+    }
   }
 
-  const deleteService = (id: string) => {
-    setServices(services.filter((service: Service) => service.id !== id))
+  const handleUpdateService = async (serviceData: Partial<Service>) => {
+    try {
+      const response = await fetch('/api/services', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ...serviceData, id: selectedService?.id }),
+      })
+      
+      if (!response.ok) throw new Error('Failed to update service')
+      
+      await fetchServices()
+      setSelectedService(null)
+    } catch (error) {
+      console.error('Error updating service:', error)
+      throw error
+    }
   }
 
-  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setNewService({ ...newService, name: e.target.value })
+  const handleDeleteService = async (id: string) => {
+    try {
+      const response = await fetch('/api/services', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      })
+      
+      if (!response.ok) throw new Error('Failed to delete service')
+      
+      await fetchServices()
+      toast.success("Service deleted")
+    } catch (error) {
+      console.error('Error deleting service:', error)
+      toast.error("Failed to delete service")
+    }
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>
   }
 
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Services Management</h1>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button className="mb-4">Add New Service</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Service</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={newService.name}
-                onChange={handleNameChange}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="status" className="text-right">
-                Status
-              </Label>
-              <Select
-                value={newService.status}
-                onValueChange={(value: ServiceStatus) =>
-                  setNewService({ ...newService, status: value })
-                }
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="operational">Operational</SelectItem>
-                  <SelectItem value="degraded">Degraded</SelectItem>
-                  <SelectItem value="outage">Outage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Button onClick={addService}>Add Service</Button>
-        </DialogContent>
-      </Dialog>
+      
+      <Button onClick={() => setShowForm(true)} className="mb-4">
+        Add New Service
+      </Button>
+
+      {(showForm || selectedService) && (
+        <ServiceForm
+          service={selectedService}
+          onClose={() => {
+            setShowForm(false)
+            setSelectedService(null)
+          }}
+          onSubmit={selectedService ? handleUpdateService : handleCreateService}
+        />
+      )}
 
       <Table>
         <TableHeader>
@@ -107,7 +123,7 @@ export default function ServicesManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {services.map((service: Service) => (
+          {services.map((service) => (
             <TableRow key={service.id}>
               <TableCell>{service.name}</TableCell>
               <TableCell>{service.status}</TableCell>
@@ -115,27 +131,13 @@ export default function ServicesManagement() {
                 <Button
                   variant="outline"
                   className="mr-2"
-                  onClick={() => updateService(service.id, { status: "operational" })}
+                  onClick={() => setSelectedService(service)}
                 >
-                  Set Operational
+                  Edit
                 </Button>
                 <Button
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => updateService(service.id, { status: "degraded" })}
-                >
-                  Set Degraded
-                </Button>
-                <Button
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => updateService(service.id, { status: "outage" })}
-                >
-                  Set Outage
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => deleteService(service.id)}
+                  variant="destructive"
+                  onClick={() => handleDeleteService(service.id)}
                 >
                   Delete
                 </Button>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Service } from "@/types"
+import { toast } from "sonner"
 
 type ServiceStatus = "operational" | "degraded" | "outage"
 
@@ -18,15 +19,24 @@ interface ServiceFormProps {
 export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormProps) {
   const [name, setName] = useState(service?.name ?? "")
   const [status, setStatus] = useState<ServiceStatus>(service?.status ?? "operational")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    await onSubmit({
-      id: service?.id,
-      name,
-      status
-    })
-    onClose()
+    try {
+      setIsSubmitting(true)
+      await onSubmit({
+        name,
+        status
+      })
+      toast.success(service ? "Service updated" : "Service created")
+      onClose()
+    } catch (error) {
+      console.error('Error submitting service:', error)
+      toast.error("Failed to save service")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleStatusChange = (value: ServiceStatus) => {
@@ -45,6 +55,7 @@ export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormP
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Enter service name"
               required
             />
           </div>
@@ -54,7 +65,7 @@ export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormP
               value={status}
               onValueChange={handleStatusChange}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -64,12 +75,12 @@ export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormP
               </SelectContent>
             </Select>
           </div>
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
-              {service ? 'Update' : 'Create'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : service ? 'Update' : 'Create'}
             </Button>
           </div>
         </form>

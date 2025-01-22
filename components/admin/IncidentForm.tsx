@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Incident } from "@/types"
+import { toast } from "sonner"
 
 type IncidentStatus = "investigating" | "identified" | "monitoring" | "resolved"
 
@@ -19,16 +20,26 @@ interface IncidentFormProps {
 export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFormProps) {
   const [title, setTitle] = useState(incident?.title ?? "")
   const [status, setStatus] = useState<IncidentStatus>(incident?.status ?? "investigating")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    await onSubmit({
-      id: incident?.id,
-      title,
-      status,
-      createdAt: incident?.createdAt ?? new Date()
-    })
-    onClose()
+    try {
+      setIsSubmitting(true)
+      await onSubmit({
+        id: incident?.id,
+        title,
+        status,
+        createdAt: incident?.createdAt ?? new Date()
+      })
+      toast.success(incident ? "Incident updated" : "Incident created")
+      onClose()
+    } catch (error) {
+      console.error('Error submitting incident:', error)
+      toast.error("Failed to save incident")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleStatusChange = (value: IncidentStatus) => {
@@ -47,6 +58,7 @@ export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFo
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter incident title"
               required
             />
           </div>
@@ -56,7 +68,7 @@ export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFo
               value={status}
               onValueChange={handleStatusChange}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -67,12 +79,12 @@ export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFo
               </SelectContent>
             </Select>
           </div>
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-end space-x-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">
-              {incident ? 'Update' : 'Create'}
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : incident ? 'Update' : 'Create'}
             </Button>
           </div>
         </form>
