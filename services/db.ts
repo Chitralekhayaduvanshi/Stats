@@ -1,4 +1,4 @@
-import { MongoClient, ObjectId, Document } from 'mongodb'
+import { MongoClient, ObjectId, Document, ModifyResult } from 'mongodb'
 import clientPromise from '@/utils/mongodb'
 import { Service, Incident, BaseIncident, MongoIncident } from '@/types'
 
@@ -103,13 +103,13 @@ export async function updateIncident(id: string, data: Partial<BaseIncident>): P
     { returnDocument: 'after' }
   )
 
-  if (!result || !result.value) {
+  if (!result) {
     throw new Error('Incident not found')
   }
 
   return {
-    ...result.value,
-    _id: result.value._id.toString(),
+    ...result,
+    _id: result._id.toString(),
   }
 }
 
