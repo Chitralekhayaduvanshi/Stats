@@ -103,7 +103,9 @@ export async function updateIncident(id: string, data: Partial<BaseIncident>): P
     { returnDocument: 'after' }
   )
 
-  if (!result.value) throw new Error('Incident not found')
+  if (!result || !result.value) {
+    throw new Error('Incident not found')
+  }
 
   return {
     ...result.value,
