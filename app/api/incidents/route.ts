@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { ObjectId } from 'mongodb'
 import { BaseIncident } from '@/types'
 import { getIncidents, createIncident, updateIncident, deleteIncident } from '@/services/db'
-import clientPromise from '@/utils/mongodb'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +16,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json()
-  const newIncident = await createIncident(body)
-  return NextResponse.json(newIncident)
+  try {
+    const body = await request.json()
+    const newIncident = await createIncident(body)
+    return NextResponse.json(newIncident)
+  } catch (error) {
+    console.error('Error creating incident:', error)
+    return NextResponse.json({ error: 'Failed to create incident' }, { status: 500 })
+  }
 }
 
 export async function PUT(request: Request) {
@@ -34,12 +38,20 @@ export async function PUT(request: Request) {
     return NextResponse.json(updatedIncident)
   } catch (error) {
     console.error('Error updating incident:', error)
-    return NextResponse.json({ error: 'Failed to update incident' }, { status: 500 })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to update incident' }, 
+      { status: 500 }
+    )
   }
 }
 
 export async function DELETE(request: Request) {
-  const { id } = await request.json()
-  await deleteIncident(id)
-  return NextResponse.json({ success: true })
+  try {
+    const { id } = await request.json()
+    await deleteIncident(id)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting incident:', error)
+    return NextResponse.json({ error: 'Failed to delete incident' }, { status: 500 })
+  }
 } 

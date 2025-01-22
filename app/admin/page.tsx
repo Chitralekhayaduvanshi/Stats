@@ -64,16 +64,37 @@ export default function AdminDashboard() {
   }
 
   const handleIncidentSubmit = async (incident: Partial<Incident>) => {
-    await fetch('/api/incidents', {
-      method: editingIncident ? 'PUT' : 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(incident)
-    })
-    fetchIncidents()
-    setIsIncidentFormOpen(false)
-    setEditingIncident(null)
+    try {
+      const response = await fetch('/api/incidents', {
+        method: editingIncident ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(
+          editingIncident 
+            ? { 
+                id: editingIncident._id,
+                title: incident.title,
+                status: incident.status,
+                serviceId: incident.serviceId
+              }
+            : incident
+        )
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save incident')
+      }
+
+      await fetchIncidents()
+      setIsIncidentFormOpen(false)
+      setEditingIncident(null)
+      toast.success(editingIncident ? "Incident updated" : "Incident created")
+    } catch (error) {
+      console.error('Error saving incident:', error)
+      toast.error(error instanceof Error ? error.message : "Failed to save incident")
+    }
   }
 
   const handleDeleteService = async (id: string) => {

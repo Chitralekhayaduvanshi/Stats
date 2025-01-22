@@ -100,7 +100,10 @@ export async function updateIncident(id: string, data: Partial<BaseIncident>): P
         updatedAt: new Date()
       }
     },
-    { returnDocument: 'after' }
+    { 
+      returnDocument: 'after',
+      upsert: false // Don't create if doesn't exist
+    }
   )
 
   if (!result) {
