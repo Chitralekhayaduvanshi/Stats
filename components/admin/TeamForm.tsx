@@ -30,12 +30,9 @@ export default function TeamForm({ team, onClose, onSubmit }: TeamFormProps) {
       await onSubmit({
         name,
         description,
-        members: team?.members ?? [],
       })
-      toast.success(team ? "Team updated successfully" : "Team created successfully")
     } catch (error) {
       console.error('Error submitting team:', error)
-      toast.error("Failed to save team")
     } finally {
       setIsSubmitting(false)
     }

@@ -3,15 +3,11 @@ import clientPromise from '@/utils/mongodb'
 import { ObjectId } from 'mongodb'
 import { Team } from '@/types'
 
-interface MongoTeam extends Omit<Team, '_id'> {
-  _id: ObjectId
-}
-
 export async function GET() {
   try {
     const client = await clientPromise
     const db = client.db()
-    const teams = await db.collection<MongoTeam>('teams').find({}).toArray()
+    const teams = await db.collection('teams').find({}).toArray()
     
     return NextResponse.json(teams.map(team => ({
       ...team,
