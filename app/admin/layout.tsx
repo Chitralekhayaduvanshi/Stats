@@ -3,7 +3,6 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -21,28 +20,33 @@ export default function AdminLayout({
   const pathname = usePathname()
 
   return (
-    <div>
-    <nav className="border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center space-x-4">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-primary",
-                pathname === item.href
-                  ? "text-black dark:text-white"
-                  : "text-muted-foreground"
-              )}
-            >
-              {item.label}
-            </Link>
-          ))}
+    <div className="min-h-screen">
+      <header className="border-b">
+        <div className="container mx-auto p-4 flex justify-between items-center">
+          <div className="flex items-center space-x-6">
+            <h1 className="text-xl font-bold">Admin Dashboard</h1>
+            <nav className="flex items-center space-x-4">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary",
+                    pathname === item.href
+                      ? "text-black dark:text-white"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
           </div>
         </div>
-        </nav>
-        <main>{children}</main>
+      </header>
+      <main className="container mx-auto py-6">
+        {children}
+      </main>
     </div>
   )
 } 
