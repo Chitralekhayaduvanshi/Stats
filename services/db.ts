@@ -1,13 +1,19 @@
 import { MongoClient, ObjectId, Document } from 'mongodb'
 import clientPromise from '@/utils/mongodb'
-import { Service, Incident } from '@/types'
+import { Service, Incident, BaseIncident, MongoIncident } from '@/types'
 
 interface MongoService extends Omit<Service, 'id'> {
   _id: ObjectId
 }
 
-interface MongoIncident extends Omit<Incident, 'id'> {
-  _id: ObjectId
+interface UptimeData extends Document {
+  name: string
+  uptime: number
+}
+
+const getCollection = async () => {
+  const client = await clientPromise
+  return client.db().collection<MongoIncident>('incidents')
 }
 
 export async function getDb() {
@@ -58,47 +64,59 @@ export async function deleteService(id: string) {
 }
 
 // Incidents
-export async function getIncidents() {
-  const db = await getDb()
-  const incidents = await db.collection<MongoIncident>('incidents').find({}).toArray()
-  return incidents.map(({ _id, ...incident }) => ({
+export async function getIncidents(): Promise<Incident[]> {
+  const collection = await getCollection()
+  const incidents = await collection.find({}).toArray()
+  return incidents.map(incident => ({
     ...incident,
-    id: _id.toString(),
-    createdAt: new Date(incident.createdAt)
+    _id: incident._id.toString(),
   }))
 }
 
-export async function createIncident(incident: Omit<Incident, 'id'>) {
-  const db = await getDb()
-  const result = await db.collection<MongoIncident>('incidents').insertOne({
-    ...incident,
-    createdAt: new Date()
-  } as any)
+export async function createIncident(data: Partial<BaseIncident>): Promise<Incident> {
+  const collection = await getCollection()
+  const result = await collection.insertOne({
+    ...data,
+    createdAt: new Date(),
+    _id: new ObjectId()
+  } as MongoIncident)
+
+  const incident = await collection.findOne({ _id: result.insertedId })
+  if (!incident) throw new Error('Failed to create incident')
+
   return {
     ...incident,
-    id: result.insertedId.toString()
+    _id: incident._id.toString(),
   }
 }
 
-export async function updateIncident(id: string, incident: Partial<Incident>) {
-  const db = await getDb()
-  await db.collection<MongoIncident>('incidents').updateOne(
+export async function updateIncident(id: string, data: Partial<BaseIncident>): Promise<Incident> {
+  const collection = await getCollection()
+  const result = await collection.findOneAndUpdate(
     { _id: new ObjectId(id) },
-    { $set: incident }
+    {
+      $set: {
+        ...data,
+        updatedAt: new Date()
+      }
+    },
+    { returnDocument: 'after' }
   )
+
+  if (!result.value) throw new Error('Incident not found')
+
+  return {
+    ...result.value,
+    _id: result.value._id.toString(),
+  }
 }
 
-export async function deleteIncident(id: string) {
-  const db = await getDb()
-  await db.collection<MongoIncident>('incidents').deleteOne({ _id: new ObjectId(id) })
+export async function deleteIncident(id: string): Promise<void> {
+  const collection = await getCollection()
+  await collection.deleteOne({ _id: new ObjectId(id) })
 }
 
 // Uptime
-interface UptimeData extends Document {
-  name: string
-  uptime: number
-}
-
 export async function getUptime() {
   const db = await getDb()
   const uptime = await db.collection<UptimeData>('uptime').find({}).toArray()

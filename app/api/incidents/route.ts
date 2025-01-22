@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { Incident } from '@/types'
+import { ObjectId } from 'mongodb'
+import { BaseIncident } from '@/types'
 import { getIncidents, createIncident, updateIncident, deleteIncident } from '@/services/db'
 import clientPromise from '@/utils/mongodb'
-import { ObjectId } from 'mongodb'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,32 +24,14 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const client = await clientPromise
-    const db = client.db()
-    const { id, title, status, serviceId } = await request.json()
+    const { id, ...data } = await request.json()
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 })
     }
 
-    const result = await db.collection('incidents').findOneAndUpdate(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          title,
-          status,
-          serviceId,
-          updatedAt: new Date()
-        }
-      },
-      { returnDocument: 'after' }
-    )
-
-    if (!result || !result.value) {
-      return NextResponse.json({ error: 'Incident not found' }, { status: 404 })
-    }
-
-    return NextResponse.json(result.value)
+    const updatedIncident = await updateIncident(id, data as Partial<BaseIncident>)
+    return NextResponse.json(updatedIncident)
   } catch (error) {
     console.error('Error updating incident:', error)
     return NextResponse.json({ error: 'Failed to update incident' }, { status: 500 })
