@@ -1,104 +1,164 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { CheckCircle, AlertTriangle, XCircle } from "lucide-react"
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Service, Incident } from "@/types"
+import { format } from "date-fns"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle, Clock, CheckCircle2, AlertTriangle } from "lucide-react"
 
-export default function StatusPage() {
+export default function HomePage() {
   const [services, setServices] = useState<Service[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
-  const [uptimeData, setUptimeData] = useState<{ name: string; uptime: number }[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 30000) // Refresh every 30 seconds
-    return () => clearInterval(interval)
   }, [])
 
   const fetchData = async () => {
     try {
-      // Fetch services
-      const servicesResponse = await fetch('/api/services')
-      const servicesData = await servicesResponse.json()
+      const [servicesRes, incidentsRes] = await Promise.all([
+        fetch('/api/services'),
+        fetch('/api/incidents')
+      ])
+      
+      const [servicesData, incidentsData] = await Promise.all([
+        servicesRes.json(),
+        incidentsRes.json()
+      ])
+
       setServices(servicesData)
-
-      // Fetch incidents
-      const incidentsResponse = await fetch('/api/incidents')
-      const incidentsData = await incidentsResponse.json()
       setIncidents(incidentsData)
-
-      // Fetch uptime data
-      const uptimeResponse = await fetch('/api/uptime')
-      const uptimeData = await uptimeResponse.json()
-      setUptimeData(uptimeData)
     } catch (error) {
       console.error('Error fetching data:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const getStatusIcon = (status: Service["status"]) => {
+  const activeIncidents = incidents.filter(
+    incident => incident.status !== "resolved"
+  )
+
+  const maintenanceIncidents = incidents.filter(
+    incident => incident.status === "monitoring" && incident.title.toLowerCase().includes('maintenance')
+  )
+
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "operational":
-        return <CheckCircle className="text-green-500" />
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />
       case "degraded":
-        return <AlertTriangle className="text-yellow-500" />
+        return <AlertTriangle className="h-5 w-5 text-yellow-500" />
       case "outage":
-        return <XCircle className="text-red-500" />
+        return <AlertCircle className="h-5 w-5 text-red-500" />
+      default:
+        return null
     }
+  }
+
+  const getIncidentStatusColor = (status: string) => {
+    switch (status) {
+      case "investigating":
+        return "text-red-500"
+      case "identified":
+        return "text-orange-500"
+      case "monitoring":
+        return "text-blue-500"
+      case "resolved":
+        return "text-green-500"
+      default:
+        return "text-gray-500"
+    }
+  }
+
+  if (isLoading) {
+    return <div className="container mx-auto p-4">Loading...</div>
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">System Status</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {services.map((service) => (
-          <Card key={service.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                {getStatusIcon(service.status)}
-                <span className="ml-2">{service.name}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>{service.status}</CardDescription>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      <h2 className="text-2xl font-bold mb-4">Current Incidents</h2>
-      {incidents.length > 0 ? (
-        incidents.map((incident) => (
-          <Alert key={incident.id} className="mb-4">
-            <AlertTitle>{incident.title}</AlertTitle>
-            <AlertDescription>
-              Status: {incident.status}
-              <br />
-              Created: {incident.createdAt.toLocaleString()}
-            </AlertDescription>
-          </Alert>
-        ))
-      ) : (
-        <p>No current incidents</p>
+    <div className="container mx-auto p-4 space-y-8">
+      {/* Active Incidents */}
+      {activeIncidents.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Active Incidents</AlertTitle>
+          <AlertDescription>
+            There are currently {activeIncidents.length} active incidents.
+          </AlertDescription>
+        </Alert>
       )}
-      <h2 className="text-2xl font-bold my-4">Uptime Chart</h2>
-      <Card>
-        <CardHeader>
-          <CardTitle>30-Day Uptime</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={uptimeData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Line type="monotone" dataKey="uptime" stroke="#8884d8" />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+
+      {/* Scheduled Maintenance */}
+      {maintenanceIncidents.length > 0 && (
+        <Alert>
+          <Clock className="h-4 w-4" />
+          <AlertTitle>Scheduled Maintenance</AlertTitle>
+          <AlertDescription>
+            There are currently {maintenanceIncidents.length} maintenance activities in progress.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Services Status */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Services Status</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {services.map((service) => (
+            <Card key={service.id}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {service.name}
+                </CardTitle>
+                {getStatusIcon(service.status)}
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {service.status}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Incidents Timeline */}
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Incident History</h2>
+        <div className="space-y-4">
+          {incidents
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .map((incident) => {
+              const relatedService = services.find(s => s.id === incident.serviceId)
+              return (
+                <Card key={incident._id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{incident.title}</CardTitle>
+                      <span className={`text-sm font-medium ${getIncidentStatusColor(incident.status)}`}>
+                        {incident.status}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {relatedService?.name} - {format(new Date(incident.createdAt), 'PPp')}
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center space-x-2">
+                      <div className={`w-2 h-2 rounded-full ${getIncidentStatusColor(incident.status)}`} />
+                      <p className="text-sm">
+                        {incident.status === "resolved" 
+                          ? "This incident has been resolved."
+                          : "This incident is still being investigated."}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+        </div>
+      </div>
     </div>
   )
 }
