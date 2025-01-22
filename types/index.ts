@@ -24,23 +24,4 @@ export interface MongoIncident extends BaseIncident {
 export interface Incident extends BaseIncident {
   _id: string
   id?: string
-}
-
-export interface User {
-  _id: string
-  email: string
-  name: string
-  role: "admin" | "member"
-  teamId?: string
-  createdAt: Date
-  updatedAt?: Date
-}
-
-export interface Team {
-  _id: string
-  name: string
-  description?: string
-  members: string[] // User IDs
-  createdAt: Date
-  updatedAt?: Date
 } 
