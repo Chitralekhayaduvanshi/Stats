@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Service } from "@/types"
+
+type ServiceStatus = "operational" | "degraded" | "outage"
 
 interface ServiceFormProps {
   service?: Service | null
@@ -15,7 +17,7 @@ interface ServiceFormProps {
 
 export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormProps) {
   const [name, setName] = useState(service?.name ?? "")
-  const [status, setStatus] = useState<Service["status"]>(service?.status ?? "operational")
+  const [status, setStatus] = useState<ServiceStatus>(service?.status ?? "operational")
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -25,6 +27,10 @@ export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormP
       status
     })
     onClose()
+  }
+
+  const handleStatusChange = (value: ServiceStatus) => {
+    setStatus(value)
   }
 
   return (
@@ -44,7 +50,10 @@ export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormP
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Status</label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select
+              value={status}
+              onValueChange={handleStatusChange}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
