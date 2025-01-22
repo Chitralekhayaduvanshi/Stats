@@ -103,7 +103,7 @@ export default function AdminDashboard() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id })
+        body: JSON.stringify({ id }),
       })
       
       if (!response.ok) throw new Error('Failed to delete incident')
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
           {incidents.map((incident) => {
             const relatedService = services.find(s => s.id === incident.serviceId)
             return (
-              <Card key={incident.id}>
+              <Card key={incident._id}>
                 <CardHeader>
                   <CardTitle>{incident.title}</CardTitle>
                 </CardHeader>
@@ -196,7 +196,7 @@ export default function AdminDashboard() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleDeleteIncident(incident.id)
+                      handleDeleteIncident(incident._id)
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
