@@ -11,18 +11,28 @@ interface MongoIncident extends Omit<Incident, 'id'> {
 }
 
 export async function getDb() {
-  const client = await clientPromise
-  return client.db('status-page')
+  try {
+    const client = await clientPromise
+    return client.db('status-page')
+  } catch (error) {
+    console.error('Error connecting to database:', error)
+    throw new Error('Failed to connect to database')
+  }
 }
 
 // Services
 export async function getServices() {
-  const db = await getDb()
-  const services = await db.collection<MongoService>('services').find({}).toArray()
-  return services.map(({ _id, ...service }) => ({
-    ...service,
-    id: _id.toString()
-  })) as Service[]
+  try {
+    const db = await getDb()
+    const services = await db.collection<MongoService>('services').find({}).toArray()
+    return services.map(({ _id, ...service }) => ({
+      ...service,
+      id: _id.toString()
+    })) as Service[]
+  } catch (error) {
+    console.error('Error in getServices:', error)
+    throw error
+  }
 }
 
 export async function createService(service: Omit<Service, 'id'>) {

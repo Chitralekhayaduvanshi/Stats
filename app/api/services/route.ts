@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server'
 import { Service } from '@/types'
 import { getServices, createService, updateService, deleteService } from '@/services/db'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
-  const services = await getServices()
-  return NextResponse.json(services)
+  try {
+    const services = await getServices()
+    return NextResponse.json(services)
+  } catch (error) {
+    console.error('Error fetching services:', error)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
 }
 
 export async function POST(request: Request) {
