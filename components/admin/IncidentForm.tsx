@@ -6,30 +6,36 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Incident } from "@/types"
+import { Service, Incident } from "@/types"
 import { toast } from "sonner"
 
 type IncidentStatus = "investigating" | "identified" | "monitoring" | "resolved"
 
 interface IncidentFormProps {
   incident?: Incident | null
+  services: Service[]
   onClose: () => void
   onSubmit: (incident: Partial<Incident>) => Promise<void>
 }
 
-export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFormProps) {
+export default function IncidentForm({ incident, services, onClose, onSubmit }: IncidentFormProps) {
   const [title, setTitle] = useState(incident?.title ?? "")
   const [status, setStatus] = useState<IncidentStatus>(incident?.status ?? "investigating")
+  const [serviceId, setServiceId] = useState(incident?.serviceId ?? "")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!serviceId) {
+      toast.error("Please select a service")
+      return
+    }
     try {
       setIsSubmitting(true)
       await onSubmit({
-        id: incident?.id,
         title,
         status,
+        serviceId,
         createdAt: incident?.createdAt ?? new Date()
       })
       toast.success(incident ? "Incident updated" : "Incident created")
@@ -63,10 +69,29 @@ export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFo
             />
           </div>
           <div>
+            <label className="block text-sm font-medium mb-1">Service</label>
+            <Select
+              value={serviceId}
+              onValueChange={setServiceId}
+              required
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a service" />
+              </SelectTrigger>
+              <SelectContent>
+                {services.map((service) => (
+                  <SelectItem key={service.id} value={service.id}>
+                    {service.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
             <label className="block text-sm font-medium mb-1">Status</label>
             <Select
               value={status}
-              onValueChange={handleStatusChange}
+              onValueChange={(value: IncidentStatus) => setStatus(value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue />

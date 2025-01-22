@@ -9,4 +9,5 @@ export interface Incident {
   title: string
   status: "investigating" | "identified" | "monitoring" | "resolved"
   createdAt: Date
+  serviceId: string
 } 
