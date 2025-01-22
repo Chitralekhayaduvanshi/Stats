@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 })
     }
 
-    const result = await db.collection('incidents').updateOne(
+    const result = await db.collection('incidents').findOneAndUpdate(
       { _id: new ObjectId(id) },
       {
         $set: {
@@ -41,14 +41,15 @@ export async function PUT(request: Request) {
           serviceId,
           updatedAt: new Date()
         }
-      }
+      },
+      { returnDocument: 'after' }
     )
 
-    if (result.matchedCount === 0) {
+    if (!result.value) {
       return NextResponse.json({ error: 'Incident not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json(result.value)
   } catch (error) {
     console.error('Error updating incident:', error)
     return NextResponse.json({ error: 'Failed to update incident' }, { status: 500 })

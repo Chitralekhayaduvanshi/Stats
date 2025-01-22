@@ -74,7 +74,7 @@ export default function IncidentsManagement() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: selectedIncident?.id,
+          id: selectedIncident?._id,
           title: incidentData.title,
           status: incidentData.status,
           serviceId: incidentData.serviceId
@@ -154,7 +154,7 @@ export default function IncidentsManagement() {
           {incidents.map((incident) => {
             const relatedService = services.find(s => s.id === incident.serviceId)
             return (
-              <TableRow key={incident.id}>
+              <TableRow key={incident._id}>
                 <TableCell>{incident.title}</TableCell>
                 <TableCell>{relatedService?.name ?? 'Unknown'}</TableCell>
                 <TableCell>{incident.status}</TableCell>
@@ -169,7 +169,7 @@ export default function IncidentsManagement() {
                   </Button>
                   <Button
                     variant="destructive"
-                    onClick={() => handleDeleteIncident(incident.id)}
+                    onClick={() => handleDeleteIncident(incident._id)}
                   >
                     Delete
                   </Button>

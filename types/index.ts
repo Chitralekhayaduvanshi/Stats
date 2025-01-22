@@ -5,9 +5,11 @@ export interface Service {
 }
 
 export interface Incident {
+  _id: string
   id: string
   title: string
   status: "investigating" | "identified" | "monitoring" | "resolved"
   createdAt: Date
   serviceId: string
+  updatedAt?: Date
 } 

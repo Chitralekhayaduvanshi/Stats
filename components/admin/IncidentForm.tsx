@@ -33,10 +33,12 @@ export default function IncidentForm({ incident, services, onClose, onSubmit }: 
     try {
       setIsSubmitting(true)
       await onSubmit({
+        _id: incident?._id,
         title,
         status,
         serviceId,
-        createdAt: incident?.createdAt ?? new Date()
+        createdAt: incident?.createdAt ?? new Date(),
+        updatedAt: new Date()
       })
       toast.success(incident ? "Incident updated" : "Incident created")
       onClose()
