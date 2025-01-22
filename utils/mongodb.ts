@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb'
+import { MongoClient, MongoClientOptions } from 'mongodb'
 
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined
@@ -9,12 +9,14 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI
-const options = {
+const options: MongoClientOptions = {
   ssl: true,
   tls: true,
   tlsAllowInvalidCertificates: true,
   retryWrites: true,
-  w: 'majority'
+  writeConcern: {
+    w: 'majority'
+  }
 }
 
 let client: MongoClient
