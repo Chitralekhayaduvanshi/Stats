@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ServiceForm } from "@/components/admin/ServiceForm"
+import ServiceForm from "@/components/admin/ServiceForm"
 import { Service } from "@/types"
 import { toast } from "sonner"
 
