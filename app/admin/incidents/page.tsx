@@ -4,18 +4,20 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import IncidentForm from "@/components/admin/IncidentForm"
-import { Incident } from "@/types"
+import { Incident, Service } from "@/types"
 import { format } from "date-fns"
 import { toast } from "sonner"
 
 export default function IncidentsManagement() {
   const [incidents, setIncidents] = useState<Incident[]>([])
+  const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null)
 
   useEffect(() => {
     fetchIncidents()
+    fetchServices()
   }, [])
 
   const fetchIncidents = async () => {
@@ -29,6 +31,18 @@ export default function IncidentsManagement() {
       toast.error("Failed to load incidents")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchServices = async () => {
+    try {
+      const response = await fetch('/api/services')
+      if (!response.ok) throw new Error('Failed to fetch services')
+      const data = await response.json()
+      setServices(data)
+    } catch (error) {
+      console.error('Error fetching services:', error)
+      toast.error("Failed to load services")
     }
   }
 
@@ -48,7 +62,7 @@ export default function IncidentsManagement() {
       setShowForm(false)
     } catch (error) {
       console.error('Error creating incident:', error)
-      throw error // Let the form handle the error
+      throw error
     }
   }
 
@@ -107,6 +121,7 @@ export default function IncidentsManagement() {
       {(showForm || selectedIncident) && (
         <IncidentForm
           incident={selectedIncident}
+          services={services}
           onClose={() => {
             setShowForm(false)
             setSelectedIncident(null)
@@ -119,34 +134,39 @@ export default function IncidentsManagement() {
         <TableHeader>
           <TableRow>
             <TableHead>Title</TableHead>
+            <TableHead>Service</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Created At</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {incidents.map((incident) => (
-            <TableRow key={incident.id}>
-              <TableCell>{incident.title}</TableCell>
-              <TableCell>{incident.status}</TableCell>
-              <TableCell>{format(new Date(incident.createdAt), 'PPp')}</TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  className="mr-2"
-                  onClick={() => setSelectedIncident(incident)}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => handleDeleteIncident(incident.id)}
-                >
-                  Delete
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {incidents.map((incident) => {
+            const relatedService = services.find(s => s.id === incident.serviceId)
+            return (
+              <TableRow key={incident.id}>
+                <TableCell>{incident.title}</TableCell>
+                <TableCell>{relatedService?.name ?? 'Unknown'}</TableCell>
+                <TableCell>{incident.status}</TableCell>
+                <TableCell>{format(new Date(incident.createdAt), 'PPp')}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    className="mr-2"
+                    onClick={() => setSelectedIncident(incident)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteIncident(incident.id)}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>
