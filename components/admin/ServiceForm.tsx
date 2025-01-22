@@ -15,14 +15,14 @@ interface ServiceFormProps {
 
 export default function ServiceForm({ service, onClose, onSubmit }: ServiceFormProps) {
   const [name, setName] = useState(service?.name ?? "")
-  const [status, setStatus] = useState(service?.status ?? "operational")
+  const [status, setStatus] = useState<Service["status"]>(service?.status ?? "operational")
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     await onSubmit({
       id: service?.id,
       name,
-      status: status as Service["status"]
+      status
     })
     onClose()
   }

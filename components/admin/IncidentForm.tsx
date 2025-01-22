@@ -16,14 +16,14 @@ interface IncidentFormProps {
 
 export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFormProps) {
   const [title, setTitle] = useState(incident?.title ?? "")
-  const [status, setStatus] = useState(incident?.status ?? "investigating")
+  const [status, setStatus] = useState<Incident["status"]>(incident?.status ?? "investigating")
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     await onSubmit({
       id: incident?.id,
       title,
-      status: status as Incident["status"],
+      status,
       createdAt: incident?.createdAt ?? new Date()
     })
     onClose()

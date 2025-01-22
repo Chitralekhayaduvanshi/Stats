@@ -22,17 +22,57 @@ export default function AdminPage() {
   }, [])
 
   const fetchServices = async () => {
-    // TODO: Replace with actual API call
-    const response = await fetch('/api/services')
-    const data = await response.json()
-    setServices(data)
+    try {
+      const response = await fetch('/api/services', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      const data = await response.json()
+      setServices(data)
+    } catch (error) {
+      console.error('Error fetching services:', error)
+    }
   }
 
   const fetchIncidents = async () => {
-    // TODO: Replace with actual API call
-    const response = await fetch('/api/incidents')
-    const data = await response.json()
-    setIncidents(data)
+    try {
+      const response = await fetch('/api/incidents', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      const data = await response.json()
+      setIncidents(data)
+    } catch (error) {
+      console.error('Error fetching incidents:', error)
+    }
+  }
+
+  const handleServiceSubmit = async (service: Partial<Service>) => {
+    await fetch('/api/services', {
+      method: editingService ? 'PUT' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(service)
+    })
+    fetchServices()
+    setIsServiceFormOpen(false)
+    setEditingService(null)
+  }
+
+  const handleIncidentSubmit = async (incident: Partial<Incident>) => {
+    await fetch('/api/incidents', {
+      method: editingIncident ? 'PUT' : 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(incident)
+    })
+    fetchIncidents()
+    setIsIncidentFormOpen(false)
+    setEditingIncident(null)
   }
 
   return (
@@ -91,14 +131,7 @@ export default function AdminPage() {
             setIsServiceFormOpen(false)
             setEditingService(null)
           }}
-          onSubmit={async (service) => {
-            // TODO: Replace with actual API call
-            await fetch('/api/services', {
-              method: editingService ? 'PUT' : 'POST',
-              body: JSON.stringify(service)
-            })
-            fetchServices()
-          }}
+          onSubmit={handleServiceSubmit}
         />
       )}
 
@@ -109,14 +142,7 @@ export default function AdminPage() {
             setIsIncidentFormOpen(false)
             setEditingIncident(null)
           }}
-          onSubmit={async (incident) => {
-            // TODO: Replace with actual API call
-            await fetch('/api/incidents', {
-              method: editingIncident ? 'PUT' : 'POST',
-              body: JSON.stringify(incident)
-            })
-            fetchIncidents()
-          }}
+          onSubmit={handleIncidentSubmit}
         />
       )}
     </div>
