@@ -1,16 +1,19 @@
 "use client"
 
-import { useState } from "react"
+import { useState, ChangeEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import type { Service } from '@/types'
 
-interface Service {
-  id: number
+type ServiceStatus = "operational" | "degraded" | "outage"
+
+interface ServiceFormData {
   name: string
-  status: "operational" | "degraded" | "outage"
+  status: ServiceStatus
 }
 
 export default function ServicesManagement() {
@@ -19,19 +22,32 @@ export default function ServicesManagement() {
     { id: 2, name: "Website", status: "degraded" },
     { id: 3, name: "Database", status: "operational" },
   ])
-  const [newService, setNewService] = useState({ name: "", status: "operational" as const })
+
+  const [newService, setNewService] = useState<ServiceFormData>({
+    name: "",
+    status: "operational"
+  })
 
   const addService = () => {
-    setServices([...services, { id: services.length + 1, ...newService }])
+    setServices([
+      ...services,
+      { id: services.length + 1, ...newService }
+    ])
     setNewService({ name: "", status: "operational" })
   }
 
   const updateService = (id: number, updatedService: Partial<Service>) => {
-    setServices(services.map((service) => (service.id === id ? { ...service, ...updatedService } : service)))
+    setServices(services.map((service: Service) => 
+      service.id === id ? { ...service, ...updatedService } : service
+    ))
   }
 
   const deleteService = (id: number) => {
-    setServices(services.filter((service) => service.id !== id))
+    setServices(services.filter((service: Service) => service.id !== id))
+  }
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setNewService({ ...newService, name: e.target.value })
   }
 
   return (
@@ -53,7 +69,7 @@ export default function ServicesManagement() {
               <Input
                 id="name"
                 value={newService.name}
-                onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                onChange={handleNameChange}
                 className="col-span-3"
               />
             </div>
@@ -61,23 +77,27 @@ export default function ServicesManagement() {
               <Label htmlFor="status" className="text-right">
                 Status
               </Label>
-              <select
-                id="status"
+              <Select
                 value={newService.status}
-                onChange={(e) =>
-                  setNewService({ ...newService, status: e.target.value as "operational" | "degraded" | "outage" })
+                onValueChange={(value: ServiceStatus) =>
+                  setNewService({ ...newService, status: value })
                 }
-                className="col-span-3"
               >
-                <option value="operational">Operational</option>
-                <option value="degraded">Degraded</option>
-                <option value="outage">Outage</option>
-              </select>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="operational">Operational</SelectItem>
+                  <SelectItem value="degraded">Degraded</SelectItem>
+                  <SelectItem value="outage">Outage</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <Button onClick={addService}>Add Service</Button>
         </DialogContent>
       </Dialog>
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -87,7 +107,7 @@ export default function ServicesManagement() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {services.map((service) => (
+          {services.map((service: Service) => (
             <TableRow key={service.id}>
               <TableCell>{service.name}</TableCell>
               <TableCell>{service.status}</TableCell>
@@ -113,7 +133,10 @@ export default function ServicesManagement() {
                 >
                   Set Outage
                 </Button>
-                <Button variant="destructive" onClick={() => deleteService(service.id)}>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => deleteService(service.id)}
+                >
                   Delete
                 </Button>
               </TableCell>
