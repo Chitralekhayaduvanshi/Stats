@@ -5,19 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle, AlertTriangle, XCircle } from "lucide-react"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
-
-interface Service {
-  id: number
-  name: string
-  status: "operational" | "degraded" | "outage"
-}
-
-interface Incident {
-  id: number
-  title: string
-  status: "investigating" | "identified" | "monitoring" | "resolved"
-  createdAt: Date
-}
+import { Service, Incident } from "@/types"
 
 export default function StatusPage() {
   const [services, setServices] = useState<Service[]>([])
@@ -25,21 +13,31 @@ export default function StatusPage() {
   const [uptimeData, setUptimeData] = useState<{ name: string; uptime: number }[]>([])
 
   useEffect(() => {
-    // Fetch services and incidents data
-    setServices([
-      { id: 1, name: "API", status: "operational" },
-      { id: 2, name: "Website", status: "degraded" },
-      { id: 3, name: "Database", status: "operational" },
-    ])
-    setIncidents([{ id: 1, title: "API Slowdown", status: "investigating", createdAt: new Date() }])
-
-    // Generate mock uptime data
-    const mockUptimeData = Array.from({ length: 30 }, (_, i) => ({
-      name: `Day ${i + 1}`,
-      uptime: 95 + Math.random() * 5,
-    }))
-    setUptimeData(mockUptimeData)
+    fetchData()
+    const interval = setInterval(fetchData, 30000) // Refresh every 30 seconds
+    return () => clearInterval(interval)
   }, [])
+
+  const fetchData = async () => {
+    try {
+      // Fetch services
+      const servicesResponse = await fetch('/api/services')
+      const servicesData = await servicesResponse.json()
+      setServices(servicesData)
+
+      // Fetch incidents
+      const incidentsResponse = await fetch('/api/incidents')
+      const incidentsData = await incidentsResponse.json()
+      setIncidents(incidentsData)
+
+      // Fetch uptime data
+      const uptimeResponse = await fetch('/api/uptime')
+      const uptimeData = await uptimeResponse.json()
+      setUptimeData(uptimeData)
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    }
+  }
 
   const getStatusIcon = (status: Service["status"]) => {
     switch (status) {
