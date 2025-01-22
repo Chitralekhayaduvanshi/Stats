@@ -73,15 +73,25 @@ export default function IncidentsManagement() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...incidentData, id: selectedIncident?.id }),
+        body: JSON.stringify({
+          id: selectedIncident?.id,
+          title: incidentData.title,
+          status: incidentData.status,
+          serviceId: incidentData.serviceId
+        }),
       })
       
-      if (!response.ok) throw new Error('Failed to update incident')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update incident')
+      }
       
       await fetchIncidents()
       setSelectedIncident(null)
+      toast.success("Incident updated successfully")
     } catch (error) {
       console.error('Error updating incident:', error)
+      toast.error(error instanceof Error ? error.message : "Failed to update incident")
       throw error
     }
   }
