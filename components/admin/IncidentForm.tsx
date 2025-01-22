@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Incident } from "@/types"
 
+type IncidentStatus = "investigating" | "identified" | "monitoring" | "resolved"
+
 interface IncidentFormProps {
   incident?: Incident | null
   onClose: () => void
@@ -16,7 +18,7 @@ interface IncidentFormProps {
 
 export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFormProps) {
   const [title, setTitle] = useState(incident?.title ?? "")
-  const [status, setStatus] = useState<Incident["status"]>(incident?.status ?? "investigating")
+  const [status, setStatus] = useState<IncidentStatus>(incident?.status ?? "investigating")
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -27,6 +29,10 @@ export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFo
       createdAt: incident?.createdAt ?? new Date()
     })
     onClose()
+  }
+
+  const handleStatusChange = (value: IncidentStatus) => {
+    setStatus(value)
   }
 
   return (
@@ -46,7 +52,10 @@ export default function IncidentForm({ incident, onClose, onSubmit }: IncidentFo
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Status</label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select
+              value={status}
+              onValueChange={handleStatusChange}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
