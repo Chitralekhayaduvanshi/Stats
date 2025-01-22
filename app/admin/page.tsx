@@ -7,8 +7,11 @@ import { Plus } from "lucide-react"
 import ServiceForm from "@/components/admin/ServiceForm"
 import IncidentForm from "@/components/admin/IncidentForm"
 import { Service, Incident } from "@/types"
+import { useUser } from '@auth0/nextjs-auth0/client'
+import Link from 'next/link'
 
-export default function AdminPage() {
+export default function AdminDashboard() {
+  const { user, isLoading } = useUser()
   const [services, setServices] = useState<Service[]>([])
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false)
@@ -75,76 +78,27 @@ export default function AdminPage() {
     setEditingIncident(null)
   }
 
+  if (isLoading) return <div>Loading...</div>
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Services</h2>
-          <Button onClick={() => setIsServiceFormOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Service
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {services.map((service) => (
-            <Card key={service.id} className="cursor-pointer hover:shadow-lg transition-shadow"
-                 onClick={() => setEditingService(service)}>
-              <CardHeader>
-                <CardTitle>{service.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Status: {service.status}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Welcome, {user?.name}</h2>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Link
+          href="/admin/services"
+          className="p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+        >
+          <h3 className="text-lg font-semibold">Services</h3>
+          <p className="text-gray-600">Manage your services</p>
+        </Link>
+        <Link
+          href="/admin/incidents"
+          className="p-6 bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+        >
+          <h3 className="text-lg font-semibold">Incidents</h3>
+          <p className="text-gray-600">Manage incidents</p>
+        </Link>
       </div>
-
-      <div className="mb-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Incidents</h2>
-          <Button onClick={() => setIsIncidentFormOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add Incident
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 gap-4">
-          {incidents.map((incident) => (
-            <Card key={incident.id} className="cursor-pointer hover:shadow-lg transition-shadow"
-                 onClick={() => setEditingIncident(incident)}>
-              <CardHeader>
-                <CardTitle>{incident.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Status: {incident.status}</p>
-                <p>Created: {incident.createdAt.toLocaleString()}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {(isServiceFormOpen || editingService) && (
-        <ServiceForm
-          service={editingService}
-          onClose={() => {
-            setIsServiceFormOpen(false)
-            setEditingService(null)
-          }}
-          onSubmit={handleServiceSubmit}
-        />
-      )}
-
-      {(isIncidentFormOpen || editingIncident) && (
-        <IncidentForm
-          incident={editingIncident}
-          onClose={() => {
-            setIsIncidentFormOpen(false)
-            setEditingIncident(null)
-          }}
-          onSubmit={handleIncidentSubmit}
-        />
-      )}
     </div>
   )
 }
