@@ -1,6 +1,14 @@
+import { MongoClient, ObjectId, Document } from 'mongodb'
 import clientPromise from '@/utils/mongodb'
 import { Service, Incident } from '@/types'
-import { ObjectId } from 'mongodb'
+
+interface MongoService extends Omit<Service, 'id'> {
+  _id: ObjectId
+}
+
+interface MongoIncident extends Omit<Incident, 'id'> {
+  _id: ObjectId
+}
 
 export async function getDb() {
   const client = await clientPromise
@@ -10,7 +18,7 @@ export async function getDb() {
 // Services
 export async function getServices() {
   const db = await getDb()
-  const services = await db.collection('services').find({}).toArray()
+  const services = await db.collection<MongoService>('services').find({}).toArray()
   return services.map(({ _id, ...service }) => ({
     ...service,
     id: _id.toString()
@@ -19,7 +27,7 @@ export async function getServices() {
 
 export async function createService(service: Omit<Service, 'id'>) {
   const db = await getDb()
-  const result = await db.collection('services').insertOne(service)
+  const result = await db.collection<MongoService>('services').insertOne(service as any)
   return {
     ...service,
     id: result.insertedId.toString()
@@ -28,7 +36,7 @@ export async function createService(service: Omit<Service, 'id'>) {
 
 export async function updateService(id: string, service: Partial<Service>) {
   const db = await getDb()
-  await db.collection('services').updateOne(
+  await db.collection<MongoService>('services').updateOne(
     { _id: new ObjectId(id) },
     { $set: service }
   )
@@ -36,13 +44,13 @@ export async function updateService(id: string, service: Partial<Service>) {
 
 export async function deleteService(id: string) {
   const db = await getDb()
-  await db.collection('services').deleteOne({ _id: new ObjectId(id) })
+  await db.collection<MongoService>('services').deleteOne({ _id: new ObjectId(id) })
 }
 
 // Incidents
 export async function getIncidents() {
   const db = await getDb()
-  const incidents = await db.collection('incidents').find({}).toArray()
+  const incidents = await db.collection<MongoIncident>('incidents').find({}).toArray()
   return incidents.map(({ _id, ...incident }) => ({
     ...incident,
     id: _id.toString(),
@@ -52,10 +60,10 @@ export async function getIncidents() {
 
 export async function createIncident(incident: Omit<Incident, 'id'>) {
   const db = await getDb()
-  const result = await db.collection('incidents').insertOne({
+  const result = await db.collection<MongoIncident>('incidents').insertOne({
     ...incident,
     createdAt: new Date()
-  })
+  } as any)
   return {
     ...incident,
     id: result.insertedId.toString()
@@ -64,7 +72,7 @@ export async function createIncident(incident: Omit<Incident, 'id'>) {
 
 export async function updateIncident(id: string, incident: Partial<Incident>) {
   const db = await getDb()
-  await db.collection('incidents').updateOne(
+  await db.collection<MongoIncident>('incidents').updateOne(
     { _id: new ObjectId(id) },
     { $set: incident }
   )
@@ -72,20 +80,25 @@ export async function updateIncident(id: string, incident: Partial<Incident>) {
 
 export async function deleteIncident(id: string) {
   const db = await getDb()
-  await db.collection('incidents').deleteOne({ _id: new ObjectId(id) })
+  await db.collection<MongoIncident>('incidents').deleteOne({ _id: new ObjectId(id) })
 }
 
 // Uptime
+interface UptimeData extends Document {
+  name: string
+  uptime: number
+}
+
 export async function getUptime() {
   const db = await getDb()
-  const uptime = await db.collection('uptime').find({}).toArray()
+  const uptime = await db.collection<UptimeData>('uptime').find({}).toArray()
   return uptime.map(({ _id, ...data }) => data)
 }
 
 export async function updateUptime(data: { name: string; uptime: number }[]) {
   const db = await getDb()
-  await db.collection('uptime').deleteMany({})
+  await db.collection<UptimeData>('uptime').deleteMany({})
   if (data.length > 0) {
-    await db.collection('uptime').insertMany(data)
+    await db.collection<UptimeData>('uptime').insertMany(data as any[])
   }
 } 
